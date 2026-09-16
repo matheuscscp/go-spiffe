@@ -23,8 +23,9 @@ func AuthorizeID(allowed spiffeid.ID) Authorizer {
 
 // AuthorizeIDPrefix allows any SPIFFE ID with the given ID prefix. A matching
 // ID must be in the same trust domain and have either the same path as the
-// prefix or a path with the prefix on a segment boundary. If the prefix has no
-// path, any ID in the same trust domain is authorized.
+// prefix or a path with the prefix on a segment boundary. The prefix must have
+// a non-empty path or this function panics. Use AuthorizeMemberOf to authorize
+// any ID in a trust domain.
 func AuthorizeIDPrefix(allowed spiffeid.ID) Authorizer {
 	return AdaptMatcher(spiffeid.MatchIDPrefix(allowed))
 }

@@ -11,28 +11,45 @@ import (
 func TestAuthorizeIDPrefix(t *testing.T) {
 	authorizer := tlsconfig.AuthorizeIDPrefix(spiffeid.RequireFromString("spiffe://example.org/spire/agent"))
 
-	exact := spiffeid.RequireFromString("spiffe://example.org/spire/agent")
-	subpath := spiffeid.RequireFromString("spiffe://example.org/spire/agent/node-a")
-	segmentBoundaryMismatch := spiffeid.RequireFromString("spiffe://example.org/spire/agentish")
-	otherTrustDomain := spiffeid.RequireFromString("spiffe://other.org/spire/agent")
+	testCases := []struct {
+		name string
+		id   spiffeid.ID
+		err  string
+	}{
+		{
+			name: "exact match",
+			id:   spiffeid.RequireFromString("spiffe://example.org/spire/agent"),
+		},
+		{
+			name: "path on a segment boundary",
+			id:   spiffeid.RequireFromString("spiffe://example.org/spire/agent/node-a"),
+		},
+		{
+			name: "path not on a segment boundary",
+			id:   spiffeid.RequireFromString("spiffe://example.org/spire/agentish"),
+			err:  `unexpected ID "spiffe://example.org/spire/agentish"`,
+		},
+		{
+			name: "different trust domain",
+			id:   spiffeid.RequireFromString("spiffe://other.org/spire/agent"),
+			err:  `unexpected ID "spiffe://other.org/spire/agent"`,
+		},
+	}
 
-	assert.NoError(t, authorizer(exact, nil))
-	assert.NoError(t, authorizer(subpath, nil))
-	assert.EqualError(t, authorizer(segmentBoundaryMismatch, nil),
-		`unexpected ID "spiffe://example.org/spire/agentish"`)
-	assert.EqualError(t, authorizer(otherTrustDomain, nil),
-		`unexpected ID "spiffe://other.org/spire/agent"`)
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			err := authorizer(testCase.id, nil)
+			if testCase.err != "" {
+				assert.EqualError(t, err, testCase.err)
+				return
+			}
+			assert.NoError(t, err)
+		})
+	}
 }
 
 func TestAuthorizeIDPrefix_WithoutPath(t *testing.T) {
-	authorizer := tlsconfig.AuthorizeIDPrefix(spiffeid.RequireFromString("spiffe://example.org"))
-
-	withoutPath := spiffeid.RequireFromString("spiffe://example.org")
-	withPath := spiffeid.RequireFromString("spiffe://example.org/spire/agent")
-	otherTrustDomain := spiffeid.RequireFromString("spiffe://other.org/spire/agent")
-
-	assert.NoError(t, authorizer(withoutPath, nil))
-	assert.NoError(t, authorizer(withPath, nil))
-	assert.EqualError(t, authorizer(otherTrustDomain, nil),
-		`unexpected ID "spiffe://other.org/spire/agent"`)
+	assert.Panics(t, func() {
+		tlsconfig.AuthorizeIDPrefix(spiffeid.RequireFromString("spiffe://example.org"))
+	})
 }

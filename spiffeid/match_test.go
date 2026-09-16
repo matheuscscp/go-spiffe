@@ -66,17 +66,9 @@ func TestMatchIDPrefix_AgainstIDWithPath(t *testing.T) {
 }
 
 func TestMatchIDPrefix_AgainstIDWithoutPath(t *testing.T) {
-	matcher := spiffeid.MatchIDPrefix(foo)
-	testMatch(t, matcher,
-		`unexpected ID ""`,
-		``,
-		``,
-		``,
-		``,
-		`unexpected ID "spiffe://bar.test/A"`,
-	)
-	assert.NoError(t, matcher(fooAA))
-	assert.NoError(t, matcher(fooASub))
+	assert.Panics(t, func() {
+		spiffeid.MatchIDPrefix(foo)
+	})
 }
 
 func TestMatchOneOf_OnAListOfIDs(t *testing.T) {

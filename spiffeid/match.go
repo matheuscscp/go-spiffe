@@ -27,9 +27,13 @@ func MatchID(expected ID) Matcher {
 
 // MatchIDPrefix matches any SPIFFE ID with the given ID prefix. A matching ID
 // must be in the same trust domain and have either the same path as the prefix
-// or a path with the prefix on a segment boundary. If the prefix has no path,
-// any ID in the same trust domain matches.
+// or a path with the prefix on a segment boundary. The prefix must have a
+// non-empty path or this function panics. Use MatchMemberOf to match any ID in
+// a trust domain.
 func MatchIDPrefix(expected ID) Matcher {
+	if expected.Path() == "" {
+		panic(errPrefixMissingPath)
+	}
 	return Matcher(func(actual ID) error {
 		if actual.MemberOf(expected.TrustDomain()) && matchPathPrefix(actual.Path(), expected.Path()) {
 			return nil
@@ -63,5 +67,5 @@ func MatchMemberOf(expected TrustDomain) Matcher {
 }
 
 func matchPathPrefix(actual, expected string) bool {
-	return actual == expected || expected == "" || strings.HasPrefix(actual, expected+"/")
+	return actual == expected || strings.HasPrefix(actual, expected+"/")
 }
