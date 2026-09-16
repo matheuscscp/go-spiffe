@@ -66,9 +66,10 @@ func TestMatchIDPrefix_AgainstIDWithPath(t *testing.T) {
 }
 
 func TestMatchIDPrefix_AgainstIDWithoutPath(t *testing.T) {
-	assert.Panics(t, func() {
-		spiffeid.MatchIDPrefix(foo)
-	})
+	matcher := spiffeid.MatchIDPrefix(foo)
+	assert.EqualError(t, matcher(foo), "prefix must have a path")
+	assert.EqualError(t, matcher(fooA), "prefix must have a path")
+	assert.EqualError(t, matcher(barA), "prefix must have a path")
 }
 
 func TestMatchOneOf_OnAListOfIDs(t *testing.T) {

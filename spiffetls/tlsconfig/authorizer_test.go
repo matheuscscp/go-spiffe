@@ -49,7 +49,10 @@ func TestAuthorizeIDPrefix(t *testing.T) {
 }
 
 func TestAuthorizeIDPrefix_WithoutPath(t *testing.T) {
-	assert.Panics(t, func() {
-		tlsconfig.AuthorizeIDPrefix(spiffeid.RequireFromString("spiffe://example.org"))
-	})
+	authorizer := tlsconfig.AuthorizeIDPrefix(spiffeid.RequireFromString("spiffe://example.org"))
+
+	assert.EqualError(t,
+		authorizer(spiffeid.RequireFromString("spiffe://example.org/spire/agent"), nil),
+		"prefix must have a path",
+	)
 }
