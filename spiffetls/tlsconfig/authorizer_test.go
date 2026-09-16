@@ -11,10 +11,28 @@ import (
 func TestAuthorizeIDPrefix(t *testing.T) {
 	authorizer := tlsconfig.AuthorizeIDPrefix(spiffeid.RequireFromString("spiffe://example.org/spire/agent"))
 
-	assert.NoError(t, authorizer(spiffeid.RequireFromString("spiffe://example.org/spire/agent"), nil))
-	assert.NoError(t, authorizer(spiffeid.RequireFromString("spiffe://example.org/spire/agent/node-a"), nil))
-	assert.EqualError(t,
-		authorizer(spiffeid.RequireFromString("spiffe://example.org/spire/agentish"), nil),
-		`unexpected ID "spiffe://example.org/spire/agentish"`,
-	)
+	exact := spiffeid.RequireFromString("spiffe://example.org/spire/agent")
+	subpath := spiffeid.RequireFromString("spiffe://example.org/spire/agent/node-a")
+	segmentBoundaryMismatch := spiffeid.RequireFromString("spiffe://example.org/spire/agentish")
+	otherTrustDomain := spiffeid.RequireFromString("spiffe://other.org/spire/agent")
+
+	assert.NoError(t, authorizer(exact, nil))
+	assert.NoError(t, authorizer(subpath, nil))
+	assert.EqualError(t, authorizer(segmentBoundaryMismatch, nil),
+		`unexpected ID "spiffe://example.org/spire/agentish"`)
+	assert.EqualError(t, authorizer(otherTrustDomain, nil),
+		`unexpected ID "spiffe://other.org/spire/agent"`)
+}
+
+func TestAuthorizeIDPrefix_WithoutPath(t *testing.T) {
+	authorizer := tlsconfig.AuthorizeIDPrefix(spiffeid.RequireFromString("spiffe://example.org"))
+
+	withoutPath := spiffeid.RequireFromString("spiffe://example.org")
+	withPath := spiffeid.RequireFromString("spiffe://example.org/spire/agent")
+	otherTrustDomain := spiffeid.RequireFromString("spiffe://other.org/spire/agent")
+
+	assert.NoError(t, authorizer(withoutPath, nil))
+	assert.NoError(t, authorizer(withPath, nil))
+	assert.EqualError(t, authorizer(otherTrustDomain, nil),
+		`unexpected ID "spiffe://other.org/spire/agent"`)
 }
